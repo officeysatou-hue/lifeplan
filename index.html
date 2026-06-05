@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<!-- saved from url=(0163)file:///C:/Users/Owner/Dropbox/%E3%83%A9%E3%82%A4%E3%83%95%E3%83%97%E3%83%A9%E3%83%B3%E3%82%B7%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%83%BC%20Ver.4.5.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ライフプランシミュレーター Ver.4.5</title>
+    <script src="./index_files/chart.js.ダウンロード"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --border: #cbd5e1; --danger: #ef4444; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 280px 1fr; gap: 15px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 8px; }
+        label { display: block; font-size: 11px; font-weight: bold; }
+        input[type=number], input[type=text] { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-size: 14px; text-align: right; }
+        input:focus { outline: 2px solid var(--primary); background: #f0f9ff; }
+        textarea { width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-size: 11px; min-height: 40px; }
+        .btn { width: 100%; padding: 8px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 5px; font-size: 13px;}
+        .btn-blue { background: var(--primary); }
+        .btn-gray { background: #475569; }
+        .btn-green { background: #10b981; }
+        .btn-share { background: #8b5cf6; }
+        .btn-add { background: #f59e0b; color: white; border: none; border-radius: 4px; font-size: 10px; padding: 3px 6px; cursor: pointer; }
+        .btn-all { background: #10b981; color: white; border: none; border-radius: 4px; font-size: 9px; padding: 3px 6px; cursor: pointer; margin-top: 2px; }
+        .btn-del { background: transparent; color: var(--danger); border: none; cursor: pointer; font-size: 12px; padding: 0 4px; }
+        
+        .chart-container { height: 250px; margin-bottom: 10px; }
+        .decade-nav { display: flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 8px; border-radius: 8px; margin-bottom: 10px; }
+        .decade-nav button { padding: 5px 15px; background: #fff; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        .table-container { overflow-x: auto; background: #fff; border: 1px solid var(--border); border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; font-size: 12px; }
+        th, td { border: 1px solid var(--border); padding: 4px 6px; text-align: right; min-width: 70px; }
+        .sticky-col { position: sticky; left: 0; background: #f1f5f9; z-index: 10; text-align: left; min-width: 130px; font-weight: bold; box-shadow: 2px 0 4px rgba(0,0,0,0.05); }
+        .bg-calc { background: #f8fafc; font-weight: bold; }
+        .cat-header { background: #e2e8f0; font-weight: bold; text-align: left; }
+        .sub-item { padding-left: 15px !important; font-size: 11px; }
+        .bankruptcy { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1 style="font-size: 18px; margin: 0;">ライフプラン Ver.4.5</h1>
+        <div id="saveStatus" style="font-size: 11px; color: #10b981;">✓ 自動保存済</div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h3 style="margin-top:0; font-size: 14px;">基本設定</h3>
+            <div class="form-group"><label>開始年</label><input type="number" id="startYear" onchange="saveSettings()"></div>
+            <div class="form-group"><label>本人の年齢</label><input type="number" id="baseAge" onchange="saveSettings()"></div>
+            <div class="form-group"><label>としさん年齢差</label><input type="number" id="f1Diff" onchange="saveSettings()"></div>
+            <div class="form-group"><label>のんちゃん年齢差</label><input type="number" id="f2Diff" onchange="saveSettings()"></div>
+            <div class="form-group"><label>だるちゃん年齢差</label><input type="number" id="f3Diff" onchange="saveSettings()"></div>
+            <div class="form-group"><label>初期貯蓄 (万円)</label><input type="number" id="initSavings" oninput="saveSettings()"></div>
+            <hr>
+            <button class="btn btn-gray" onclick="downloadBackup()">💾 ファイルへ保存 (PC用)</button>
+            <button class="btn btn-share" onclick="copyShareCode()">🔗 共有用データをコピー</button>
+            <label class="btn btn-green" style="display:block; text-align:center; cursor:pointer;">
+                📂 ファイルから復元
+                <input type="file" style="display:none" onchange="restoreFromFile(event)">
+            </label>
+            <button class="btn btn-blue" onclick="importFromCode()">📥 共有コードから復元</button>
+            <hr>
+            <button class="btn" style="background:#ef4444; font-size: 11px;" onclick="confirmReset()">全データを初期化</button>
+        </div>
+
+        <div class="card">
+            <div class="chart-container"><canvas id="mainChart" style="box-sizing: border-box; display: block; height: 250px; width: 1073px;" width="1073" height="250"></canvas></div>
+            
+            <div class="decade-nav">
+                <button onclick="changeDecade(-1)">◀ 前の10年</button>
+                <span id="decadeTitle" style="font-weight:bold; font-size: 14px;">2026年 - 2035年</span>
+                <button onclick="changeDecade(1)">次の10年 ▶</button>
+            </div>
+
+            <div class="table-container">
+                <table id="verticalTable"><tbody><tr><th class="sticky-col cat-header">西暦</th><th class="bg-calc">2026</th><th class="bg-calc">2027</th><th class="bg-calc">2028</th><th class="bg-calc">2029</th><th class="bg-calc">2030</th><th class="bg-calc">2031</th><th class="bg-calc">2032</th><th class="bg-calc">2033</th><th class="bg-calc">2034</th><th class="bg-calc">2035</th></tr><tr><th class="sticky-col ">年齢(私)</th><td class="" id="td--0">43</td><td class="" id="td--1">44</td><td class="" id="td--2">45</td><td class="" id="td--3">46</td><td class="" id="td--4">47</td><td class="" id="td--5">48</td><td class="" id="td--6">49</td><td class="" id="td--7">50</td><td class="" id="td--8">51</td><td class="" id="td--9">52</td></tr><tr><th class="sticky-col ">としさん</th><td class="" id="td--0">46</td><td class="" id="td--1">47</td><td class="" id="td--2">48</td><td class="" id="td--3">49</td><td class="" id="td--4">50</td><td class="" id="td--5">51</td><td class="" id="td--6">52</td><td class="" id="td--7">53</td><td class="" id="td--8">54</td><td class="" id="td--9">55</td></tr><tr><th class="sticky-col ">のんちゃん</th><td class="" id="td--0">3</td><td class="" id="td--1">4</td><td class="" id="td--2">5</td><td class="" id="td--3">6</td><td class="" id="td--4">7</td><td class="" id="td--5">8</td><td class="" id="td--6">9</td><td class="" id="td--7">10</td><td class="" id="td--8">11</td><td class="" id="td--9">12</td></tr><tr><th class="sticky-col ">だるちゃん</th><td class="" id="td--0">18</td><td class="" id="td--1">19</td><td class="" id="td--2">20</td><td class="" id="td--3">21</td><td class="" id="td--4">22</td><td class="" id="td--5">23</td><td class="" id="td--6">24</td><td class="" id="td--7">25</td><td class="" id="td--8">26</td><td class="" id="td--9">27</td></tr><tr><th class="sticky-col">ライフイベント</th><td><textarea oninput="updateVal(0,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(1,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(2,&#39;event&#39;,null,this.value)">NISAカンスト</textarea></td><td><textarea oninput="updateVal(3,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(4,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(5,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(6,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(7,&#39;event&#39;,null,this.value)">小共済解約９００万900</textarea></td><td><textarea oninput="updateVal(8,&#39;event&#39;,null,this.value)"></textarea></td><td><textarea oninput="updateVal(9,&#39;event&#39;,null,this.value)"></textarea></td></tr><tr><th class="sticky-col cat-header" colspan="11">収入 (万円)</th></tr><tr><th class="sticky-col">私の収入 <br><button class="btn-all" onclick="applyDecade(&#39;incMe&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="500" oninput="updateVal(0,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(1,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(2,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(3,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(4,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(5,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(6,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(7,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(8,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="500" oninput="updateVal(9,&#39;incMe&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">としの収入 <br><button class="btn-all" onclick="applyDecade(&#39;incF1&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="84" oninput="updateVal(0,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(1,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(2,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(3,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(4,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(5,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(6,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(7,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(8,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="84" oninput="updateVal(9,&#39;incF1&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">その他の収入 <br><button class="btn-all" onclick="applyDecade(&#39;incOther&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="" oninput="updateVal(0,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(1,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(2,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(3,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(4,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(5,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(6,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="900" oninput="updateVal(7,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(8,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(9,&#39;incOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col bg-calc">収入合計</th><td class="bg-calc" id="td-totalInc-0">584</td><td class="bg-calc" id="td-totalInc-1">584</td><td class="bg-calc" id="td-totalInc-2">584</td><td class="bg-calc" id="td-totalInc-3">584</td><td class="bg-calc" id="td-totalInc-4">584</td><td class="bg-calc" id="td-totalInc-5">584</td><td class="bg-calc" id="td-totalInc-6">584</td><td class="bg-calc" id="td-totalInc-7">1484</td><td class="bg-calc" id="td-totalInc-8">584</td><td class="bg-calc" id="td-totalInc-9">584</td></tr><tr><th class="sticky-col cat-header" colspan="11">支出 (万円)</th></tr><tr><th class="sticky-col">基本生活費 <br><button class="btn-all" onclick="applyDecade(&#39;expLiving&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="200" oninput="updateVal(0,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(1,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(2,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(3,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(4,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(5,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(6,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(7,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(8,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="200" oninput="updateVal(9,&#39;expLiving&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">住居費 <br><button class="btn-all" onclick="applyDecade(&#39;expHouse&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="140" oninput="updateVal(0,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(1,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(2,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(3,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(4,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(5,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(6,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(7,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(8,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="140" oninput="updateVal(9,&#39;expHouse&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">・ソニー生命 <button class="btn-del" onclick="deleteBreakdown(&#39;insValues&#39;,&#39;ins_1780367247718&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;insValues&#39;,&#39;ins_1780367247718&#39;)">10年分一括</button></th><td><input type="number" value="36" oninput="updateVal(0,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(1,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(2,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(3,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(4,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(5,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(6,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(7,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(8,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="36" oninput="updateVal(9,&#39;insValues&#39;,&#39;ins_1780367247718&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">・スミセイ <button class="btn-del" onclick="deleteBreakdown(&#39;insValues&#39;,&#39;ins_1780367288699&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;insValues&#39;,&#39;ins_1780367288699&#39;)">10年分一括</button></th><td><input type="number" value="8" oninput="updateVal(0,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(1,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(2,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(3,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(4,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(5,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(6,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(7,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(8,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="8" oninput="updateVal(9,&#39;insValues&#39;,&#39;ins_1780367288699&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">・その他損保等 <button class="btn-del" onclick="deleteBreakdown(&#39;insValues&#39;,&#39;ins_1780367325745&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;insValues&#39;,&#39;ins_1780367325745&#39;)">10年分一括</button></th><td><input type="number" value="6" oninput="updateVal(0,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(1,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(2,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(3,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(4,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(5,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(6,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(7,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(8,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="6" oninput="updateVal(9,&#39;insValues&#39;,&#39;ins_1780367325745&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col sub-item"><button class="btn-add" onclick="addBreakdown(&#39;ins&#39;)">＋保険の内訳追加</button></th><td colspan="10"></td></tr><tr><th class="sticky-col">・NISA <button class="btn-del" onclick="deleteBreakdown(&#39;invValues&#39;,&#39;inv_1780367458168&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;invValues&#39;,&#39;inv_1780367458168&#39;)">10年分一括</button></th><td><input type="number" value="360" oninput="updateVal(0,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="360" oninput="updateVal(1,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="360" oninput="updateVal(2,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(3,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(4,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(5,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(6,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(7,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(8,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(9,&#39;invValues&#39;,&#39;inv_1780367458168&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">・Ideco <button class="btn-del" onclick="deleteBreakdown(&#39;invValues&#39;,&#39;inv_1780367466863&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;invValues&#39;,&#39;inv_1780367466863&#39;)">10年分一括</button></th><td><input type="number" value="28" oninput="updateVal(0,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="28" oninput="updateVal(1,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="28" oninput="updateVal(2,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(3,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(4,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(5,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(6,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(7,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(8,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="78" oninput="updateVal(9,&#39;invValues&#39;,&#39;inv_1780367466863&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col">・小共済 <button class="btn-del" onclick="deleteBreakdown(&#39;invValues&#39;,&#39;inv_1780367473133&#39;)">×</button><br><button class="btn-all" onclick="applyDecade(&#39;invValues&#39;,&#39;inv_1780367473133&#39;)">10年分一括</button></th><td><input type="number" value="60" oninput="updateVal(0,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(1,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(2,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(3,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(4,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(5,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(6,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="60" oninput="updateVal(7,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(8,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="" oninput="updateVal(9,&#39;invValues&#39;,&#39;inv_1780367473133&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col sub-item"><button class="btn-add" onclick="addBreakdown(&#39;inv&#39;)">＋投資の内訳追加</button></th><td colspan="10"></td></tr><tr><th class="sticky-col">その他支出 <br><button class="btn-all" onclick="applyDecade(&#39;expOther&#39;,&#39;&#39;)">10年分一括</button></th><td><input type="number" value="50" oninput="updateVal(0,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(1,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(2,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(3,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(4,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(5,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(6,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(7,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(8,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td><td><input type="number" value="50" oninput="updateVal(9,&#39;expOther&#39;,&#39;&#39;,this.value)" onfocus="this.select()"></td></tr><tr><th class="sticky-col bg-calc">支出合計</th><td class="bg-calc" id="td-totalExp-0">888</td><td class="bg-calc" id="td-totalExp-1">888</td><td class="bg-calc" id="td-totalExp-2">888</td><td class="bg-calc" id="td-totalExp-3">638</td><td class="bg-calc" id="td-totalExp-4">638</td><td class="bg-calc" id="td-totalExp-5">638</td><td class="bg-calc" id="td-totalExp-6">638</td><td class="bg-calc" id="td-totalExp-7">638</td><td class="bg-calc" id="td-totalExp-8">578</td><td class="bg-calc" id="td-totalExp-9">578</td></tr><tr><th class="sticky-col cat-header" colspan="11">収支状況</th></tr><tr><th class="sticky-col bg-calc">年間収支</th><td class="bg-calc" id="td-net-0"><span style="color:red">-304</span></td><td class="bg-calc" id="td-net-1"><span style="color:red">-304</span></td><td class="bg-calc" id="td-net-2"><span style="color:red">-304</span></td><td class="bg-calc" id="td-net-3"><span style="color:red">-54</span></td><td class="bg-calc" id="td-net-4"><span style="color:red">-54</span></td><td class="bg-calc" id="td-net-5"><span style="color:red">-54</span></td><td class="bg-calc" id="td-net-6"><span style="color:red">-54</span></td><td class="bg-calc" id="td-net-7"><span style="color:green">+846</span></td><td class="bg-calc" id="td-net-8"><span style="color:green">+6</span></td><td class="bg-calc" id="td-net-9"><span style="color:green">+6</span></td></tr><tr><th class="sticky-col bg-calc">貯蓄残高</th><td class="bg-calc" id="td-saving-0"><span class="">2696</span></td><td class="bg-calc" id="td-saving-1"><span class="">2392</span></td><td class="bg-calc" id="td-saving-2"><span class="">2088</span></td><td class="bg-calc" id="td-saving-3"><span class="">2034</span></td><td class="bg-calc" id="td-saving-4"><span class="">1980</span></td><td class="bg-calc" id="td-saving-5"><span class="">1926</span></td><td class="bg-calc" id="td-saving-6"><span class="">1872</span></td><td class="bg-calc" id="td-saving-7"><span class="">2718</span></td><td class="bg-calc" id="td-saving-8"><span class="">2724</span></td><td class="bg-calc" id="td-saving-9"><span class="">2730</span></td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let appData = { settings: {}, years: [] };
+    let currentDecade = 0;
+    let chartInstance = null;
+
+    // 起動時にデータを読み込み、なければ初期化
+    window.onload = () => {
+        const saved = localStorage.getItem('lifePlanV4Data');
+        if (saved) {
+            try { appData = JSON.parse(saved); } catch (e) { initNewData(); }
+        } else { initNewData(); }
+        
+        sanitizeData(); // 構造の修復
+        syncSettingsToUI();
+        fullRender();
+    };
+
+    function initNewData() {
+        appData = { settings: { startYear: 2034, baseAge: 51, f1Diff: 3, f2Diff: -40, f3Diff: -23, initSavings: 1000, insList: [], invList: [] }, years: [] };
+    }
+
+    function sanitizeData() {
+        if (!appData.settings) initNewData();
+        if (!appData.settings.insList) appData.settings.insList = [];
+        if (!appData.settings.invList) appData.settings.invList = [];
+        if (!appData.years || appData.years.length < 51) {
+            const oldYears = appData.years || [];
+            appData.years = Array.from({length: 51}, (_, i) => ({
+                ...(oldYears[i] || {}),
+                event: oldYears[i]?.event || "",
+                incMe: oldYears[i]?.incMe || 0, incF1: oldYears[i]?.incF1 || 0, incOther: oldYears[i]?.incOther || 0,
+                expLiving: oldYears[i]?.expLiving || 0, expHouse: oldYears[i]?.expHouse || 0, expOther: oldYears[i]?.expOther || 0,
+                insValues: oldYears[i]?.insValues || {}, invValues: oldYears[i]?.invValues || {}
+            }));
+        }
+    }
+
+    function syncSettingsToUI() {
+        document.getElementById('startYear').value = appData.settings.startYear;
+        document.getElementById('baseAge').value = appData.settings.baseAge;
+        document.getElementById('f1Diff').value = appData.settings.f1Diff;
+        document.getElementById('f2Diff').value = appData.settings.f2Diff;
+        document.getElementById('f3Diff').value = appData.settings.f3Diff;
+        document.getElementById('initSavings').value = appData.settings.initSavings;
+    }
+
+    function saveSettings() {
+        appData.settings.startYear = parseInt(document.getElementById('startYear').value) || 0;
+        appData.settings.baseAge = parseInt(document.getElementById('baseAge').value) || 0;
+        appData.settings.f1Diff = parseInt(document.getElementById('f1Diff').value) || 0;
+        appData.settings.f2Diff = parseInt(document.getElementById('f2Diff').value) || 0;
+        appData.settings.f3Diff = parseInt(document.getElementById('f3Diff').value) || 0;
+        appData.settings.initSavings = parseFloat(document.getElementById('initSavings').value) || 0;
+        fullRender();
+    }
+
+    // 計算ロジック
+    function calculate() {
+        let curSav = appData.settings.initSavings;
+        const result = { labels: [], savs: [], incs: [], exps: [] };
+        
+        appData.years.forEach((y, i) => {
+            const insTotal = Object.values(y.insValues || {}).reduce((a, b) => a + (parseFloat(b)||0), 0);
+            const invTotal = Object.values(y.invValues || {}).reduce((a, b) => a + (parseFloat(b)||0), 0);
+            
+            y.totalInc = (parseFloat(y.incMe)||0) + (parseFloat(y.incF1)||0) + (parseFloat(y.incOther)||0);
+            y.totalExp = (parseFloat(y.expLiving)||0) + (parseFloat(y.expHouse)||0) + (parseFloat(y.expOther)||0) + insTotal + invTotal;
+            y.net = y.totalInc - y.totalExp;
+            curSav += y.net;
+            y.saving = curSav;
+
+            result.labels.push(appData.settings.startYear + i);
+            result.savs.push(curSav);
+            result.incs.push(y.totalInc);
+            result.exps.push(y.totalExp);
+        });
+        return result;
+    }
+
+    // テーブルとグラフの描画
+    function fullRender() {
+        const c = calculate();
+        const start = currentDecade * 10;
+        const end = Math.min(start + 10, 51);
+        document.getElementById('decadeTitle').innerText = `${appData.settings.startYear + start}年 - ${appData.settings.startYear + end - 1}年`;
+
+        let html = `<tr><th class="sticky-col cat-header">西暦</th>`;
+        for (let i = start; i < end; i++) html += `<th class="bg-calc">${appData.settings.startYear + i}</th>`;
+        html += `</tr>`;
+
+        // 年齢
+        html += renderStaticRow("年齢(私)", i => appData.settings.baseAge + i);
+        html += renderStaticRow("としさん", i => appData.settings.baseAge + appData.settings.f1Diff + i);
+        html += renderStaticRow("のんちゃん", i => appData.settings.baseAge + appData.settings.f2Diff + i);
+        html += renderStaticRow("だるちゃん", i => appData.settings.baseAge + appData.settings.f3Diff + i);
+
+        // イベント
+        html += `<tr><th class="sticky-col">ライフイベント</th>`;
+        for (let i = start; i < end; i++) html += `<td><textarea oninput="updateVal(${i},'event',null,this.value)">${appData.years[i].event}</textarea></td>`;
+        html += `</tr>`;
+
+        // 収入
+        html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">収入 (万円)</th></tr>`;
+        html += renderInputRow("私の収入", "incMe");
+        html += renderInputRow("としの収入", "incF1");
+        html += renderInputRow("その他の収入", "incOther");
+        html += renderStaticRow("収入合計", i => appData.years[i].totalInc, "totalInc", true);
+
+        // 支出
+        html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">支出 (万円)</th></tr>`;
+        html += renderInputRow("基本生活費", "expLiving");
+        html += renderInputRow("住居費", "expHouse");
+        
+        // 内訳表示を維持
+        appData.settings.insList.forEach(item => html += renderInputRow(`・${item.name}`, "insValues", item.id));
+        html += `<tr><th class="sticky-col sub-item"><button class="btn-add" onclick="addBreakdown('ins')">＋保険の内訳追加</button></th><td colspan="${end-start}"></td></tr>`;
+        
+        appData.settings.invList.forEach(item => html += renderInputRow(`・${item.name}`, "invValues", item.id));
+        html += `<tr><th class="sticky-col sub-item"><button class="btn-add" onclick="addBreakdown('inv')">＋投資の内訳追加</button></th><td colspan="${end-start}"></td></tr>`;
+
+        html += renderInputRow("その他支出", "expOther");
+        html += renderStaticRow("支出合計", i => appData.years[i].totalExp, "totalExp", true);
+
+        // 残高
+        html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">収支状況</th></tr>`;
+        html += renderStaticRow("年間収支", i => {
+            const n = appData.years[i].net; return `<span style="color:${n<0?'red':'green'}">${n>0?'+':''}${n}</span>`;
+        }, "net", true);
+        html += renderStaticRow("貯蓄残高", i => {
+            const s = Math.round(appData.years[i].saving); return `<span class="${s<0?'bankruptcy':''}">${s}</span>`;
+        }, "saving", true);
+
+        document.getElementById('verticalTable').innerHTML = html;
+        drawChart(c);
+        localStorage.setItem('lifePlanV4Data', JSON.stringify(appData));
+    }
+
+    function renderStaticRow(label, fn, idKey = "", isBold = false) {
+        const start = currentDecade * 10; const end = Math.min(start + 10, 51);
+        let h = `<tr><th class="sticky-col ${isBold?'bg-calc':''}">${label}</th>`;
+        for (let i = start; i < end; i++) h += `<td class="${isBold?'bg-calc':''}" id="td-${idKey}-${i}">${fn(i)}</td>`;
+        return h + `</tr>`;
+    }
+
+    function renderInputRow(label, key, subId = "") {
+        const start = currentDecade * 10; const end = Math.min(start + 10, 51);
+        let delBtn = subId ? `<button class="btn-del" onclick="deleteBreakdown('${key}','${subId}')">×</button>` : "";
+        let h = `<tr><th class="sticky-col">${label} ${delBtn}<br><button class="btn-all" onclick="applyDecade('${key}','${subId}')">10年分一括</button></th>`;
+        for (let i = start; i < end; i++) {
+            const val = subId ? (appData.years[i][key][subId] || 0) : appData.years[i][key];
+            h += `<td><input type="number" value="${val===0?'':val}" oninput="updateVal(${i},'${key}','${subId}',this.value)" onfocus="this.select()"></td>`;
+        }
+        return h + `</tr>`;
+    }
+
+    // 💡 1文字で途切れない＆リアルタイム計算
+    function updateVal(idx, key, subId, val) {
+        if (key === 'event') { appData.years[idx].event = val; }
+        else {
+            const num = parseFloat(val) || 0;
+            if (subId) appData.years[idx][key][subId] = num; else appData.years[idx][key] = num;
+        }
+        
+        // 画面を崩さず数字だけ更新
+        const c = calculate();
+        appData.years.forEach((y, i) => {
+            const elInc = document.getElementById(`td-totalInc-${i}`); if(elInc) elInc.innerText = y.totalInc;
+            const elExp = document.getElementById(`td-totalExp-${i}`); if(elExp) elExp.innerText = y.totalExp;
+            const elNet = document.getElementById(`td-net-${i}`); if(elNet) elNet.innerHTML = `<span style="color:${y.net<0?'red':'green'}">${y.net>0?'+':''}${y.net}</span>`;
+            const elSav = document.getElementById(`td-saving-${i}`); if(elSav) {
+                const s = Math.round(y.saving); elSav.innerHTML = `<span class="${s<0?'bankruptcy':''}">${s}</span>`;
+            }
+        });
+        drawChart(c);
+        localStorage.setItem('lifePlanV4Data', JSON.stringify(appData));
+        document.getElementById('saveStatus').innerText = "✓ 自動保存済";
+    }
+
+    // 💡 10年分ピンポイント一括入力
+    function applyDecade(key, subId) {
+        const val = prompt("表示されている10年間に一括入力する数値");
+        if (val === null || val === "") return;
+        const num = parseFloat(val) || 0;
+        const start = currentDecade * 10;
+        const end = Math.min(start + 10, 51);
+        for (let i = start; i < end; i++) {
+            if (subId) appData.years[i][key][subId] = num; else appData.years[i][key] = num;
+        }
+        fullRender(); // ここは再描画が必要
+    }
+
+    function changeDecade(dir) {
+        currentDecade = Math.max(0, Math.min(5, currentDecade + dir));
+        fullRender();
+    }
+
+    function addBreakdown(type) {
+        const name = prompt("項目名（例：NISA、住友生命など）");
+        if (!name) return;
+        const id = 'id_' + Date.now();
+        if (type === 'ins') appData.settings.insList.push({id, name});
+        else appData.settings.invList.push({id, name});
+        sanitizeData();
+        fullRender();
+    }
+
+    function deleteBreakdown(key, id) {
+        if (!confirm("削除しますか？")) return;
+        if (key === 'insValues') appData.settings.insList = appData.settings.insList.filter(x => x.id !== id);
+        else appData.settings.invList = appData.settings.invList.filter(x => x.id !== id);
+        fullRender();
+    }
+
+    function drawChart(c) {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: c.labels,
+                datasets: [
+                    { label: '貯蓄残高', data: c.savs, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, yAxisID: 'y1' },
+                    { label: '総収入', data: c.incs, borderColor: '#10b981', borderDash: [5,5], yAxisID: 'y2' },
+                    { label: '総支出', data: c.exps, borderColor: '#ef4444', borderDash: [2,2], yAxisID: 'y2' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y1: { position: 'left' }, y2: { position: 'right', grid: { drawOnChartArea: false } } } }
+        });
+    }
+
+    // 共有・保存・復元
+    function downloadBackup() {
+        const blob = new Blob([JSON.stringify(appData)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `lifeplan_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+
+    function copyShareCode() {
+        const code = JSON.stringify(appData);
+        navigator.clipboard.writeText(code).then(() => alert("共有コードをコピーしました！メール等に貼り付けて送信できます。"));
+    }
+
+    function importFromCode() {
+        const code = prompt("共有コードをここに貼り付けてください");
+        if (!code) return;
+        try {
+            appData = JSON.parse(code);
+            localStorage.setItem('lifePlanV4Data', JSON.stringify(appData));
+            location.reload();
+        } catch(e) { alert("コードが正しくありません"); }
+    }
+
+    function restoreFromFile(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                appData = JSON.parse(e.target.result);
+                localStorage.setItem('lifePlanV4Data', JSON.stringify(appData));
+                location.reload();
+            } catch(err) { alert("読み込み失敗"); }
+        };
+        reader.readAsText(file);
+    }
+
+    function confirmReset() { if(confirm("全データを消去しますか？")) { localStorage.clear(); location.reload(); } }
+</script>
+
+</body></html>
