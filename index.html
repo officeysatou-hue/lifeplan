@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ライフプラン">
     <meta name="theme-color" content="#2563eb">
-    <title>ライフプランシミュレーター Ver.4.6</title>
+    <title>ライフプランシミュレーター Ver.4.7</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --border: #cbd5e1; --danger: #ef4444; }
@@ -19,8 +19,11 @@
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
         .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 8px; }
-        label { display: block; font-size: 11px; font-weight: bold; }
+        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 2px;}
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
         input[type=number], input[type=text] { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-size: 14px; text-align: right; }
+        input[type=text].name-input { text-align: left; }
         input:focus { outline: 2px solid var(--primary); background: #f0f9ff; }
         textarea { width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; font-size: 11px; min-height: 40px; }
         .btn { width: 100%; padding: 8px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 0px; font-size: 12px; text-align: center; display: block; text-decoration: none; box-sizing: border-box; }
@@ -45,7 +48,6 @@
         .sub-item { padding-left: 15px !important; font-size: 11px; }
         .bankruptcy { color: var(--danger); font-weight: bold; }
 
-        /* 💡 新規追加：基本設定用の2カラムレイアウト */
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -63,13 +65,17 @@
             border-top: 1px solid var(--border);
             margin: 2px 0;
         }
+        .flex-row {
+            display: flex;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1 style="font-size: 18px; margin: 0;">ライフプラン Ver.4.6</h1>
+        <h1 style="font-size: 18px; margin: 0;">ライフプラン Ver.4.7</h1>
         <div id="saveStatus" style="font-size: 11px; color: #10b981;"></div>
     </header>
 
@@ -81,9 +87,29 @@
                 <div>
                     <div class="form-group"><label>開始年</label><input type="number" id="startYear" onchange="saveSettings()"></div>
                     <div class="form-group"><label>本人の年齢</label><input type="number" id="baseAge" onchange="saveSettings()"></div>
-                    <div class="form-group"><label>としさん年齢差</label><input type="number" id="f1Diff" onchange="saveSettings()"></div>
-                    <div class="form-group"><label>のんちゃん年齢差</label><input type="number" id="f2Diff" onchange="saveSettings()"></div>
-                    <div class="form-group"><label>だるちゃん年齢差</label><input type="number" id="f3Diff" onchange="saveSettings()"></div>
+                    
+                    <div class="form-group">
+                        <label>家族1 (名前 / 年齢差)</label>
+                        <div class="flex-row">
+                            <input type="text" id="f1Name" class="name-input" style="flex:3;" onchange="saveSettings()">
+                            <input type="number" id="f1Diff" style="flex:2;" onchange="saveSettings()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>家族2 (名前 / 年齢差)</label>
+                        <div class="flex-row">
+                            <input type="text" id="f2Name" class="name-input" style="flex:3;" onchange="saveSettings()">
+                            <input type="number" id="f2Diff" style="flex:2;" onchange="saveSettings()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>家族3 (名前 / 年齢差)</label>
+                        <div class="flex-row">
+                            <input type="text" id="f3Name" class="name-input" style="flex:3;" onchange="saveSettings()">
+                            <input type="number" id="f3Diff" style="flex:2;" onchange="saveSettings()">
+                        </div>
+                    </div>
+
                     <div class="form-group" style="margin-bottom:0;"><label>初期貯蓄 (万円)</label><input type="number" id="initSavings" oninput="saveSettings()"></div>
                 </div>
 
@@ -128,11 +154,26 @@
     };
 
     function initNewData() {
-        appData = { settings: { startYear: 2034, baseAge: 51, f1Diff: 3, f2Diff: -40, f3Diff: -23, initSavings: 1000, insList: [], invList: [] }, years: [] };
+        appData = { 
+            settings: { 
+                startYear: 2034, baseAge: 51, initSavings: 1000, 
+                f1Name: "とし", f1Diff: 3, 
+                f2Name: "のん", f2Diff: -40, 
+                f3Name: "だる", f3Diff: -23, 
+                insList: [], invList: [] 
+            }, 
+            years: [] 
+        };
     }
 
     function sanitizeData() {
         if (!appData.settings) initNewData();
+        
+        // 名前の初期値補完
+        appData.settings.f1Name = appData.settings.f1Name || "家族1";
+        appData.settings.f2Name = appData.settings.f2Name || "家族2";
+        appData.settings.f3Name = appData.settings.f3Name || "家族3";
+        
         if (!appData.settings.insList) appData.settings.insList = [];
         if (!appData.settings.invList) appData.settings.invList = [];
         if (!appData.years || appData.years.length < 51) {
@@ -150,19 +191,28 @@
     function syncSettingsToUI() {
         document.getElementById('startYear').value = appData.settings.startYear;
         document.getElementById('baseAge').value = appData.settings.baseAge;
-        document.getElementById('f1Diff').value = appData.settings.f1Diff;
-        document.getElementById('f2Diff').value = appData.settings.f2Diff;
-        document.getElementById('f3Diff').value = appData.settings.f3Diff;
         document.getElementById('initSavings').value = appData.settings.initSavings;
+        
+        document.getElementById('f1Name').value = appData.settings.f1Name;
+        document.getElementById('f1Diff').value = appData.settings.f1Diff;
+        document.getElementById('f2Name').value = appData.settings.f2Name;
+        document.getElementById('f2Diff').value = appData.settings.f2Diff;
+        document.getElementById('f3Name').value = appData.settings.f3Name;
+        document.getElementById('f3Diff').value = appData.settings.f3Diff;
     }
 
     function saveSettings() {
         appData.settings.startYear = parseInt(document.getElementById('startYear').value) || 0;
         appData.settings.baseAge = parseInt(document.getElementById('baseAge').value) || 0;
-        appData.settings.f1Diff = parseInt(document.getElementById('f1Diff').value) || 0;
-        appData.settings.f2Diff = parseInt(document.getElementById('f2Diff').value) || 0;
-        appData.settings.f3Diff = parseInt(document.getElementById('f3Diff').value) || 0;
         appData.settings.initSavings = parseFloat(document.getElementById('initSavings').value) || 0;
+        
+        appData.settings.f1Name = document.getElementById('f1Name').value || "家族1";
+        appData.settings.f1Diff = parseInt(document.getElementById('f1Diff').value) || 0;
+        appData.settings.f2Name = document.getElementById('f2Name').value || "家族2";
+        appData.settings.f2Diff = parseInt(document.getElementById('f2Diff').value) || 0;
+        appData.settings.f3Name = document.getElementById('f3Name').value || "家族3";
+        appData.settings.f3Diff = parseInt(document.getElementById('f3Diff').value) || 0;
+        
         fullRender();
     }
 
@@ -194,18 +244,23 @@
         let html = `<tr><th class="sticky-col cat-header">西暦</th>`;
         for (let i = start; i < end; i++) html += `<th class="bg-calc">${appData.settings.startYear + i}</th>`;
         html += `</tr>`;
+        
+        // 💡 表のラベルにも自由入力の名前を反映
         html += renderStaticRow("年齢(私)", i => appData.settings.baseAge + i);
-        html += renderStaticRow("としさん", i => appData.settings.baseAge + appData.settings.f1Diff + i);
-        html += renderStaticRow("のんちゃん", i => appData.settings.baseAge + appData.settings.f2Diff + i);
-        html += renderStaticRow("だるちゃん", i => appData.settings.baseAge + appData.settings.f3Diff + i);
+        html += renderStaticRow(appData.settings.f1Name, i => appData.settings.baseAge + appData.settings.f1Diff + i);
+        html += renderStaticRow(appData.settings.f2Name, i => appData.settings.baseAge + appData.settings.f2Diff + i);
+        html += renderStaticRow(appData.settings.f3Name, i => appData.settings.baseAge + appData.settings.f3Diff + i);
+        
         html += `<tr><th class="sticky-col">ライフイベント</th>`;
         for (let i = start; i < end; i++) html += `<td><textarea oninput="updateVal(${i},'event',null,this.value)">${appData.years[i].event}</textarea></td>`;
         html += `</tr>`;
         html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">収入 (万円)</th></tr>`;
+        
         html += renderInputRow("私の収入", "incMe");
-        html += renderInputRow("としの収入", "incF1");
+        html += renderInputRow(`${appData.settings.f1Name}の収入`, "incF1");
         html += renderInputRow("その他の収入", "incOther");
         html += renderStaticRow("収入合計", i => appData.years[i].totalInc, "totalInc", true);
+        
         html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">支出 (万円)</th></tr>`;
         html += renderInputRow("基本生活費", "expLiving");
         html += renderInputRow("住居費", "expHouse");
@@ -215,6 +270,7 @@
         html += `<tr><th class="sticky-col sub-item"><button class="btn-add" onclick="addBreakdown('inv')">＋投資の内訳追加</button></th><td colspan="${end-start}"></td></tr>`;
         html += renderInputRow("その他支出", "expOther");
         html += renderStaticRow("支出合計", i => appData.years[i].totalExp, "totalExp", true);
+        
         html += `<tr><th class="sticky-col cat-header" colspan="${end-start+1}">収支状況</th></tr>`;
         html += renderStaticRow("年間収支", i => {
             const n = appData.years[i].net; return `<span style="color:${n<0?'red':'green'}">${n>0?'+':''}${n}</span>`;
@@ -222,6 +278,7 @@
         html += renderStaticRow("貯蓄残高", i => {
             const s = Math.round(appData.years[i].saving); return `<span class="${s<0?'bankruptcy':''}">${s}</span>`;
         }, "saving", true);
+        
         document.getElementById('verticalTable').innerHTML = html;
         drawChart(c);
         localStorage.setItem('lifePlanV4Data', JSON.stringify(appData));
@@ -276,12 +333,14 @@
     }
 
     function changeDecade(dir) { currentDecade = Math.max(0, Math.min(5, currentDecade + dir)); fullRender(); }
+    
     function addBreakdown(type) {
         const name = prompt("項目名"); if (!name) return;
         const id = 'id_' + Date.now();
         if (type === 'ins') appData.settings.insList.push({id, name}); else appData.settings.invList.push({id, name});
         sanitizeData(); fullRender();
     }
+    
     function deleteBreakdown(key, id) {
         if (!confirm("削除しますか？")) return;
         if (key === 'insValues') appData.settings.insList = appData.settings.insList.filter(x => x.id !== id);
@@ -356,6 +415,7 @@
         };
         reader.readAsText(event.target.files[0]);
     }
+    
     function confirmReset() { if(confirm("全消去しますか？")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
